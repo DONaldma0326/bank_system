@@ -1,13 +1,6 @@
-# BankSystem
+Version
+Python 3.8 or higher
 
-## Overview
-
-BankSystem is a Python application for processing CSV data, providing functionality to load data from a CSV file, apply custom functions, save the results to a new CSV, and run tests to ensure correctness.
-
-## Prerequisites
-
-- Python 3.8 or higher
-- pip
 
 ## Installation
 
@@ -19,7 +12,8 @@ BankSystem is a Python application for processing CSV data, providing functional
 2. Create and activate a virtual environment:
    ```bash
    python -m venv .venv
-   source .venv/bin/activate  # On Windows use: .\.venv\\Scripts\\activate
+   source .venv/bin/activate  #mac os / linux 
+   .\.venv\\Scripts\\activate # On Windows use
    ```
 3. Install dependencies:
    ```bash
@@ -28,47 +22,28 @@ BankSystem is a Python application for processing CSV data, providing functional
 
 ## Usage
 
-Follow these steps to run and interact with the application:
-
-### 1. Start the Application
-
-Run the main entry point:
+Run the application in interactive mode:
 ```bash
 python main.py
 ```
 
-### 2. Call the Processing Function
+At the prompt, enter one of the following commands:
+- create-account <name> <initial_balance>
+- deposit <account_name> <amount>
+- withdraw <account_name> <amount>
+- transfer <from_account_name> <to_account_name> <amount>
+- load-csv <filename>
+- save-csv <filename>
+- help
+- show
+- exit
 
-Invoke the core processing function with any required arguments:
+## Running Tests and Coverage
+
+Run all tests:
+
 ```bash
-python main.py --function <function_name> [--args]
+python test.py
 ```
+which executes tests and prints a coverage report.
 
-### 3. Load CSV Data
-
-Load input data from a CSV file:
-```bash
-python main.py --load-csv path/to/input.csv
-```
-
-### 4. Save CSV Data
-
-Save processed data to a new CSV file:
-```bash
-python main.py --save-csv path/to/output.csv
-```
-
-## Running Tests
-
-Execute the test suite to verify functionality:
-```bash
-pytest
-```
-
-## Contributing
-
-Contributions are welcome! Please fork the repository, create a feature branch, and submit a pull request with a clear description of your changes.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

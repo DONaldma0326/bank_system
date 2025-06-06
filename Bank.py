@@ -1,39 +1,31 @@
 import csv
 import os
-from typing import Dict, Optional
+from typing import Dict
 from decimal import Decimal, InvalidOperation
-import uuid
 
-class InsufficientFundsError(Exception):
-    pass
 
-class AccountNotFoundError(Exception):
-    pass
-
-class NegativeAmountError(Exception):
-    pass
 
 class BankAccount:
-    def __init__(self, account_id: str, name: str, balance: Decimal):
-        self.account_id = account_id
+    def __init__(self,name: str, balance: float):
         self.name = name
         self.balance = balance
 
-    def deposit(self, amount: Decimal) -> None:
+    def deposit(self, amount: float) -> None:
         if amount <= 0:
-            raise NegativeAmountError("Deposit amount must be positive")
+            raise ValueError("Deposit amount must be positive")
         self.balance += amount
+        print(f"Deposited {amount} to {self.name}. New balance: {self.balance}")
 
-    def withdraw(self, amount: Decimal) -> None:
+    def withdraw(self, amount: float) -> None:
         if amount <= 0:
-            raise NegativeAmountError("Withdrawal amount must be positive")
+            raise ValueError("Withdrawal amount must be positive")
         if amount > self.balance:
-            raise InsufficientFundsError("Insufficient funds for withdrawal")
+            raise ValueError("Insufficient funds for withdrawal")
         self.balance -= amount
-
+        print(f"Withdrew {amount} from {self.name}. New balance: {self.balance}")
+    
     def to_dict(self) -> Dict[str, str]:
         return {
-            'account_id': self.account_id,
             'name': self.name,
             'balance': str(self.balance)
         }
@@ -42,71 +34,69 @@ class Bank:
     def __init__(self):
         self.accounts: Dict[str, BankAccount] = {}
 
-    def create_account(self, name: str, initial_balance: Decimal = Decimal('0')) -> str:
+    def create_account(self, name: str, initial_balance: float = float('0')) -> str:
         if initial_balance < 0:
-            raise NegativeAmountError("Initial balance cannot be negative")
-        account_id = str(uuid.uuid4())
-        self.accounts[account_id] = BankAccount(account_id, name, initial_balance)
-        print(f"Account {account_id} created with initial balance {initial_balance}")
-        return account_id
+            raise ValueError("Initial balance cannot be negative")
+        if name in self.accounts:
+            raise ValueError("Account name must be unique")
+        self.accounts[name] = BankAccount(name, initial_balance)
+        return name
 
-    def get_account(self, account_id: str) -> BankAccount:
-        if account_id not in self.accounts:
-            raise AccountNotFoundError(f"Account {account_id} not found")
-        return self.accounts[account_id]
+    def get_account(self, name: str) -> BankAccount:
+        if name not in self.accounts:
+            raise ValueError(f"Account {name} not found")
+        return self.accounts[name]
 
-    def deposit(self, account_id: str, amount: Decimal) -> None:
-        account = self.get_account(account_id)
+    def deposit(self, name: str, amount: float) -> None:
+        account = self.get_account(name)
         account.deposit(amount)
 
-    def withdraw(self, account_id: str, amount: Decimal) -> None:
-        account = self.get_account(account_id)
+    def withdraw(self, name: str, amount: float) -> None:
+        account = self.get_account(name)
         account.withdraw(amount)
 
-    def transfer(self, from_account_id: str, to_account_id: str, amount: Decimal) -> None:
-        if from_account_id == to_account_id:
+    def transfer(self, from_name: str, to_name: str, amount: float) -> None:
+        if from_name == to_name:
             raise ValueError("Cannot transfer to the same account")
-        from_account = self.get_account(from_account_id)
-        to_account = self.get_account(to_account_id)
+        from_account = self.get_account(from_name)
+        to_account = self.get_account(to_name)
         
         # Ensure atomicity: check balance first, then perform operations
         if amount <= 0:
-            raise NegativeAmountError("Transfer amount must be positive")
+            raise ValueError("Transfer amount must be positive")
         if from_account.balance < amount:
-            raise InsufficientFundsError("Insufficient funds for transfer")
+            raise ValueError("Insufficient funds for transfer")
         
         from_account.balance -= amount
         to_account.balance += amount
-
     def save_to_csv(self, filename: str) -> None:
         with open(filename, 'w', newline='') as csvfile:
-            fieldnames = ['account_id', 'name', 'balance']
+            fieldnames = ['name', 'balance']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for account in self.accounts.values():
                 writer.writerow(account.to_dict())
-
     def load_from_csv(self, filename: str) -> None:
         if not os.path.exists(filename):
             return
         self.accounts.clear()
-        seen_ids = set()
+        seen_names = set()
         with open(filename, 'r', newline='') as csvfile:
             reader = csv.DictReader(csvfile)
             for row in reader:
-                account_id = row['account_id']
-                if account_id in seen_ids:
-                    raise ValueError(f"Duplicate account_id {account_id} in CSV")
+                name = row['name']
+                if name in seen_names:
+                    raise ValueError(f"Duplicate name {name} in CSV")
+                raw_balance = row['balance']
                 try:
-                    balance = Decimal(row['balance'])
-                except InvalidOperation:
-                    raise ValueError(f"Invalid balance format for account {account_id}")
+                    balance = float(raw_balance)
+                except ValueError:
+                    raise ValueError(f"Invalid balance format for account {name}")
                 if balance < 0:
-                    raise ValueError(f"Negative balance {balance} for account {account_id}")
-                seen_ids.add(account_id)
-                self.accounts[account_id] = BankAccount(
-                    account_id,
-                    row['name'],
+                    raise ValueError(f"Negative balance {raw_balance} for account {name}")
+                seen_names.add(name)
+                self.accounts[name] = BankAccount(
+                    name,
                     balance
                 )
-                
+        
